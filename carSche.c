@@ -63,7 +63,7 @@ pthread_cond_t N2E, E2S, S2W, W2N;          //the condition mutex to wait right
 int sN, sS, sW, sE;                         //signal of each dir
 sem_t empty;                                //the deadlock signal
 
-FILE* carLog;
+FILE *carLog;
 //car
 void *carFromS(void *arg)
 {
@@ -79,7 +79,7 @@ void *carFromS(void *arg)
 
     printf("car %d from South arrives crossing\n", id);
     pthread_mutex_lock(&b);
-    sleep(1);//to cause deadlock
+    sleep(1); //to cause deadlock
     pthread_mutex_unlock(&b);
     sem_post(&empty);
     pthread_mutex_unlock(&a);
@@ -100,23 +100,23 @@ void *carFromN(void *arg)
     sem_wait(&empty);
     if (sW)
     {
-        sem_getvalue(&empty,&sem);
-        if (sem==0)
+        sem_getvalue(&empty, &sem);
+        if (sem == 0)
         {
             printf("DEADLOCK: car jam detexted, signalling North to go\n");
             sem_post(&empty);
             pthread_mutex_unlock(&c);
-            sN=0;
+            sN = 0;
             pthread_mutex_unlock(&waitN);
             return 0;
         }
-        
+
         pthread_cond_wait(&W2N, &waitN); //wait west car go first
     }
 
     printf("car %d from North arrives crossing\n", id);
     pthread_mutex_lock(&d);
-    sleep(1);//to cause deadlock
+    sleep(1); //to cause deadlock
     pthread_mutex_unlock(&d);
     sem_post(&empty);
     pthread_mutex_unlock(&c);
@@ -142,7 +142,7 @@ void *carFromE(void *arg)
 
     printf("car %d from East arrives crossing\n", id);
     pthread_mutex_lock(&c);
-    sleep(1);//to cause deadlock
+    sleep(1); //to cause deadlock
     pthread_mutex_unlock(&c);
     sem_post(&empty);
     pthread_mutex_unlock(&b);
@@ -167,7 +167,7 @@ void *carFromW(void *arg)
     }
     printf("car %d from West arrives crossing\n", id);
     pthread_mutex_lock(&a);
-    sleep(1);//to cause deadlock
+    sleep(1); //to cause deadlock
     pthread_mutex_unlock(&a);
     sem_post(&empty);
     pthread_mutex_unlock(&d);
@@ -208,20 +208,19 @@ int main(void)
     sE = 0;
 
     //semaphore init
-    sem_init(&empty,0,4);
+    sem_init(&empty, 0, 4);
 
     //init log file
-    carLog=fopen("./log","a+");
-    if (carLog==NULL)
+    carLog = fopen("./log", "a+");
+    if (carLog == NULL)
     {
         printf("log file error\n");
     }
-    
-    int logE6=fprintf(carLog,"log starts\n");
-    fflush(carLog);
-
+    fprintf(carLog, "log starts\n");
+    fflush(carLog); //flush buffer
+    // start input data
     char data[20];
-    pthread_t car[20];
+    pthread_t car[20];//the thread id of cars
     freopen("in", "r", stdin);
     int n;
     scanf("%d", &n);

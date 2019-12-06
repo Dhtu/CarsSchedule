@@ -597,7 +597,7 @@ int main(int argc, char **argv)
 	pthread_mutex_init(&block_east, NULL);
 	pthread_mutex_init(&block_west, NULL);
 	pthread_mutex_init(&block_south, NULL);
-	char s[100]="wesnwnswns";
+	char s[100]="sss";
 	// scanf("%s", s);
 	int len = strlen(s);
 	empty = 4;

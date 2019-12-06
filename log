@@ -1,1 +1,19 @@
-
+log starts
+Car 0 from 0:	 lock the wait mutex
+Car 0 from 0:	 lock the a mutex
+car 0 from South arrives crossing
+Car 0 from 0:	 lock the b mutex
+car 0 from South leaving crossing
+Car 0 from 0:	 release the S2W mutex
+Car 1 from 0:	 lock the wait mutex
+Car 1 from 0:	 lock the a mutex
+car 1 from South arrives crossing
+Car 1 from 0:	 lock the b mutex
+car 1 from South leaving crossing
+Car 1 from 0:	 release the S2W mutex
+Car 2 from 0:	 lock the wait mutex
+Car 2 from 0:	 lock the a mutex
+car 2 from South arrives crossing
+Car 2 from 0:	 lock the b mutex
+car 2 from South leaving crossing
+Car 2 from 0:	 release the S2W mutex

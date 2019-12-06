@@ -7,3 +7,8 @@
 1. 如果右面有车，就让右边先开：右面没车||先行信号
 2. 要先获取道路资源，才能继续开
 3. 开完释放资源，让左面车先行，以避免饥饿，将队列的下一辆车加进来
+## 信号量设计
+1. thread_mutex_t a, b, c, d;                  象限信号
+2. pthread_mutex_t waitN, waitS, waitE, waitW; 路口队列信号
+3. pthread_cond_t N2E, E2S, S2W, W2N;          右边先行信号
+4. sem_t empty;                                死锁检测信号

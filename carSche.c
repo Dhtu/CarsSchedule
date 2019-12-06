@@ -62,6 +62,8 @@ pthread_mutex_t waitN, waitS, waitE, waitW; //the waiting line of the road
 pthread_cond_t N2E, E2S, S2W, W2N;          //the condition mutex to wait right
 int sN, sS, sW, sE;                         //signal of each dir
 sem_t empty;                                //the deadlock signal
+
+FILE* carLog;
 //car
 void *carFromS(void *arg)
 {
@@ -69,6 +71,7 @@ void *carFromS(void *arg)
     pthread_mutex_lock(&waitS); //lock follow car
     sS = 1;
     pthread_mutex_lock(&a);
+    sem_wait(&empty);
     if (sE)
     {
         pthread_cond_wait(&E2S, &waitS); //wait east car go first
@@ -78,6 +81,7 @@ void *carFromS(void *arg)
     pthread_mutex_lock(&b);
     sleep(1);//to cause deadlock
     pthread_mutex_unlock(&b);
+    sem_post(&empty);
     pthread_mutex_unlock(&a);
     printf("car %d from South leaving crossing\n", id);
     pthread_cond_signal(&S2W);
@@ -89,12 +93,24 @@ void *carFromS(void *arg)
 void *carFromN(void *arg)
 {
     int id = *(int *)(arg);
+    int sem;
     pthread_mutex_lock(&waitN); //lock follow car
     sN = 1;
     pthread_mutex_lock(&c);
+    sem_wait(&empty);
     if (sW)
     {
-        /* code */
+        sem_getvalue(&empty,&sem);
+        if (sem==0)
+        {
+            printf("DEADLOCK: car jam detexted, signalling North to go\n");
+            sem_post(&empty);
+            pthread_mutex_unlock(&c);
+            sN=0;
+            pthread_mutex_unlock(&waitN);
+            return 0;
+        }
+        
         pthread_cond_wait(&W2N, &waitN); //wait west car go first
     }
 
@@ -102,6 +118,7 @@ void *carFromN(void *arg)
     pthread_mutex_lock(&d);
     sleep(1);//to cause deadlock
     pthread_mutex_unlock(&d);
+    sem_post(&empty);
     pthread_mutex_unlock(&c);
 
     printf("car %d from North leaving crossing\n", id);
@@ -117,6 +134,7 @@ void *carFromE(void *arg)
     pthread_mutex_lock(&waitE); //lock follow car
     sE = 1;
     pthread_mutex_lock(&b);
+    sem_wait(&empty);
     if (sN)
     {
         pthread_cond_wait(&N2E, &waitE); //wait north car go first
@@ -126,6 +144,7 @@ void *carFromE(void *arg)
     pthread_mutex_lock(&c);
     sleep(1);//to cause deadlock
     pthread_mutex_unlock(&c);
+    sem_post(&empty);
     pthread_mutex_unlock(&b);
 
     printf("car %d from East leaving crossing\n", id);
@@ -141,6 +160,7 @@ void *carFromW(void *arg)
     pthread_mutex_lock(&waitW); //lock follow car
     sW = 1;
     pthread_mutex_lock(&d);
+    sem_wait(&empty);
     if (sS)
     {
         pthread_cond_wait(&S2W, &waitW); //wait west car go first
@@ -149,6 +169,7 @@ void *carFromW(void *arg)
     pthread_mutex_lock(&a);
     sleep(1);//to cause deadlock
     pthread_mutex_unlock(&a);
+    sem_post(&empty);
     pthread_mutex_unlock(&d);
 
     printf("car %d from West leaving crossing\n", id);
@@ -185,6 +206,20 @@ int main(void)
     sN = 0;
     sW = 0;
     sE = 0;
+
+    //semaphore init
+    sem_init(&empty,0,4);
+
+    //init log file
+    carLog=fopen("./log","a+");
+    if (carLog==NULL)
+    {
+        printf("log file error\n");
+    }
+    
+    int logE6=fprintf(carLog,"log starts\n");
+    fflush(carLog);
+
     char data[20];
     pthread_t car[20];
     freopen("in", "r", stdin);
@@ -233,5 +268,6 @@ int main(void)
     {
         pthread_join(car[i], NULL);
     }
+    fclose(carLog);
     return 0;
 }

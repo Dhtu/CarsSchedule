@@ -98,15 +98,15 @@ int carSize = 0;
 void *carFromS(void *arg)
 {
     int id = *(int *)(arg); //the id of the car
-    int dir = 0;            //the direction of the car
+    char dir[20] = "South";            //the direction of the car
     char logBuffer[100];
     pthread_mutex_lock(&waitS); //lock follow car//is it necessary
-    sprintf(logBuffer, "Car %d from %d:\t lock the wait mutex\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
     toLog(logBuffer);
 
     ns = START; //not nessary to lock S2
     pthread_mutex_lock(&a);
-    sprintf(logBuffer, "Car %d from %d:\t lock the a mutex\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t lock the a mutex\n", id, dir);
     toLog(logBuffer);
 
     //print console info
@@ -122,14 +122,14 @@ void *carFromS(void *arg)
     {
         pthread_cond_wait(&E2S, &E2); //wait east car go first
 
-        sprintf(logBuffer, "Car %d from %d:\t wait the E2S mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t wait the E2S mutex\n", id, dir);
         toLog(logBuffer);
     }
     pthread_mutex_unlock(&E2);
 
     //the 2nd cross
     pthread_mutex_lock(&b);
-    sprintf(logBuffer, "Car %d from %d:\t lock the b mutex\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t lock the b mutex\n", id, dir);
     toLog(logBuffer);
 
     //driving
@@ -146,7 +146,7 @@ void *carFromS(void *arg)
 
     //signal west to go
     pthread_cond_signal(&S2W);
-    sprintf(logBuffer, "Car %d from %d:\t release the S2W mutex\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t release the S2W signal\n", id, dir);
     toLog(logBuffer);
 
     //add next car
@@ -162,7 +162,7 @@ void *carFromS(void *arg)
         pthread_cond_signal(&S2W); //last signal
         ns = IDLE;
         pthread_mutex_unlock(&S2);
-        sprintf(logBuffer, "Car %d from %d:\t release the S2W mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t release the S2W signal\n", id, dir);
         toLog(logBuffer);
     }
 
@@ -283,7 +283,7 @@ void *carFromW(void *arg)
 
     //signal north to go
     pthread_cond_signal(&W2N);
-    sprintf(logBuffer, "Car %d from %s:\t signal the W2N mutex\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t signal the W2N signal\n", id, dir);
     toLog(logBuffer);
 
     //add next car
@@ -299,7 +299,7 @@ void *carFromW(void *arg)
         pthread_cond_signal(&W2N); //last signal
         nw = IDLE;
         pthread_mutex_unlock(&W2);
-        sprintf(logBuffer, "Car %d from %s:\t release the signal mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t release the W2N signal\n", id, dir);
         toLog(logBuffer);
     }
 

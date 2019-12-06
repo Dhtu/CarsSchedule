@@ -3,39 +3,39 @@ Car 0 from West:	 lock the wait mutex
 Car 0 from West:	 lock the d mutex
 car 0 from West:	 arrives crossing
 Car 0 from West:	 lock the a mutex
-Car 1 from 0:	 lock the wait mutex
-Car 1 from 0:	 lock the a mutex
+Car 1 from South:	 lock the wait mutex
 car 0 from West:	 leaving crossing
-car 1 from South:	 arrives crossing
-Car 1 from 0:	 lock the b mutex
 Car 0 from West:	 signal the W2N mutex
+Car 1 from South:	 lock the a mutex
+car 1 from South:	 arrives crossing
+Car 1 from South:	 lock the b mutex
 Car 3 from West:	 lock the wait mutex
 Car 3 from West:	 lock the d mutex
 car 3 from West:	 arrives crossing
 car 1 from South:	 leaving crossing
-Car 1 from 0:	 release the S2W mutex
+Car 1 from South:	 release the S2W mutex
 Car 3 from West:	 wait the S2W mutex
 Car 3 from West:	 lock the a mutex
-Car 2 from 0:	 lock the wait mutex
+Car 2 from South:	 lock the wait mutex
+Car 2 from South:	 lock the a mutex
 car 3 from West:	 leaving crossing
-Car 3 from West:	 signal the W2N mutex
-Car 2 from 0:	 lock the a mutex
 car 2 from South:	 arrives crossing
-Car 2 from 0:	 lock the b mutex
+Car 2 from South:	 lock the b mutex
+Car 3 from West:	 signal the W2N mutex
 Car 4 from West:	 lock the wait mutex
 Car 4 from West:	 lock the d mutex
 car 4 from West:	 arrives crossing
 car 2 from South:	 leaving crossing
-Car 2 from 0:	 release the S2W mutex
+Car 2 from South:	 release the S2W mutex
 Car 4 from West:	 wait the S2W mutex
 Car 4 from West:	 lock the a mutex
-Car 5 from 0:	 lock the wait mutex
-Car 5 from 0:	 lock the a mutex
-car 4 from West:	 leaving crossing
+Car 5 from South:	 lock the wait mutex
+Car 5 from South:	 lock the a mutex
 car 5 from South:	 arrives crossing
+Car 5 from South:	 lock the b mutex
+car 4 from West:	 leaving crossing
 Car 4 from West:	 signal the W2N mutex
-Car 5 from 0:	 lock the b mutex
 Car 4 from West:	 release the signal mutex
 car 5 from South:	 leaving crossing
-Car 5 from 0:	 release the S2W mutex
-Car 5 from 0:	 release the S2W mutex
+Car 5 from South:	 release the S2W mutex
+Car 5 from South:	 release the S2W mutex

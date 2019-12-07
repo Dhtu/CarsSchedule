@@ -94,11 +94,11 @@ pthread_t car[20]; //the thread id of cars
 int carSize = 0;
 
 //cars from each dir
-#define DRIVING_SEC 2
+#define DRIVING_SEC 1
 void *carFromS(void *arg)
 {
     int id = *(int *)(arg); //the id of the car
-    char dir[20] = "South";            //the direction of the car
+    char dir[20] = "South"; //the direction of the car
     char logBuffer[100];
     pthread_mutex_lock(&waitS); //lock follow car//is it necessary
     sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
@@ -116,13 +116,19 @@ void *carFromS(void *arg)
 
     sem_wait(&empty); //empty--
 
+    //driving
+    sleep(DRIVING_SEC);
+
     //if the east dir has cars
     pthread_mutex_lock(&E2);
     if (ne == START)
     {
+        sprintf(logBuffer, "Car %d from %s:\t wait the E2S mutex\n", id, dir);
+        toLog(logBuffer);
+
         pthread_cond_wait(&E2S, &E2); //wait east car go first
 
-        sprintf(logBuffer, "Car %d from %s:\t wait the E2S mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t get the E2S mutex\n", id, dir);
         toLog(logBuffer);
     }
     pthread_mutex_unlock(&E2);
@@ -146,7 +152,7 @@ void *carFromS(void *arg)
 
     //signal west to go
     pthread_cond_signal(&S2W);
-    sprintf(logBuffer, "Car %d from %s:\t release the S2W signal\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t release the S2W signal 1\n", id, dir);
     toLog(logBuffer);
 
     //add next car
@@ -162,7 +168,7 @@ void *carFromS(void *arg)
         pthread_cond_signal(&S2W); //last signal
         ns = IDLE;
         pthread_mutex_unlock(&S2);
-        sprintf(logBuffer, "Car %d from %s:\t release the S2W signal\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t release the S2W signal 2\n", id, dir);
         toLog(logBuffer);
     }
 
@@ -206,32 +212,165 @@ void *carFromS(void *arg)
 //     // printf("hello");
 //     return 0;
 // }
-// void *carFromE(void *arg)
-// {
-//     int id = *(int *)(arg);
-//     pthread_mutex_lock(&waitE); //lock follow car
-//     sE = 1;
-//     pthread_mutex_lock(&b);
-//     sem_wait(&empty);
-//     if (sN)
-//     {
-//         pthread_cond_wait(&N2E, &waitE); //wait north car go first
-//     }
+void *carFromE(void *arg)
+{
+    int id = *(int *)(arg); //the id of the car
+    char dir[20] = "East";  //the direction of the car
+    char logBuffer[100];
+    pthread_mutex_lock(&waitE); //lock follow car
+    sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
+    toLog(logBuffer);
 
-//     printf("car %d from East arrives crossing\n", id);
-//     pthread_mutex_lock(&c);
-//     sleep(1); //to cause deadlock
-//     pthread_mutex_unlock(&c);
-//     sem_post(&empty);
-//     pthread_mutex_unlock(&b);
+    ne = START; //not nessary to lock S2
+    pthread_mutex_lock(&b);
+    sprintf(logBuffer, "Car %d from %s:\t lock the b mutex\n", id, dir);
+    toLog(logBuffer);
 
-//     printf("car %d from East leaving crossing\n", id);
-//     pthread_cond_signal(&E2S);
-//     sE = 0;
-//     pthread_mutex_unlock(&waitE); //next follow car
-//     // printf("hello");
-//     return 0;
-// }
+    //print console info
+    printf("car %d from %s arrives crossing\n", id, dir);
+    sprintf(logBuffer, "car %d from %s:\t arrives crossing\n", id, dir);
+    toLog(logBuffer);
+
+    sem_wait(&empty); //empty--
+
+    //driving
+    sleep(DRIVING_SEC);
+
+    //if the east dir has cars
+    pthread_mutex_lock(&N2);
+    if (nn == START) //dir refer!!!!!
+    {
+        sprintf(logBuffer, "Car %d from %s:\t wait the N2E signal\n", id, dir);
+        toLog(logBuffer);
+
+        pthread_cond_wait(&N2E, &N2); //wait east car go first
+
+        sprintf(logBuffer, "Car %d from %s:\t get the N2E signal\n", id, dir);
+        toLog(logBuffer);
+    }
+    pthread_mutex_unlock(&N2);
+
+    //the 2nd cross
+    pthread_mutex_lock(&c);
+    sprintf(logBuffer, "Car %d from %s:\t lock the c mutex\n", id, dir);
+    toLog(logBuffer);
+
+    //driving
+    sleep(DRIVING_SEC);
+
+    //release source
+    sem_post(&empty);
+    pthread_mutex_unlock(&b);
+    pthread_mutex_unlock(&c);
+    pthread_mutex_unlock(&waitE); //next follow car
+    printf("car %d from %s leaving crossing\n", id, dir);
+    sprintf(logBuffer, "car %d from %s:\t leaving crossing\n", id, dir);
+    toLog(logBuffer);
+
+    //signal north to go
+    pthread_cond_signal(&E2S);
+    sprintf(logBuffer, "Car %d from %s:\t signal the E2S signal 1\n", id, dir);
+    toLog(logBuffer);
+
+    //add next car
+    poll(&E);
+    if (!isEmpty(E))
+    {
+        pthread_create(&E.carThread[E.front], NULL, carFromE, &E.data[E.front]);
+        car[carSize++] = E.carThread[E.front];
+    }
+    else
+    {
+        pthread_mutex_lock(&E2);
+        pthread_cond_signal(&E2S); //last signal
+        ne = IDLE;
+        pthread_mutex_unlock(&E2);
+        sprintf(logBuffer, "Car %d from %s:\t release the E2S signal 2\n", id, dir);
+        toLog(logBuffer);
+    }
+
+    return 0;
+}
+void *carFromN(void *arg)
+{
+    int id = *(int *)(arg); //the id of the car
+    char dir[20] = "North";  //the direction of the car
+    char logBuffer[100];
+    pthread_mutex_lock(&waitN); //lock follow car
+    sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
+    toLog(logBuffer);
+
+    nn = START; //not nessary to lock S2
+    pthread_mutex_lock(&c);
+    sprintf(logBuffer, "Car %d from %s:\t lock the c mutex\n", id, dir);
+    toLog(logBuffer);
+
+    //print console info
+    printf("car %d from %s arrives crossing\n", id, dir);
+    sprintf(logBuffer, "car %d from %s:\t arrives crossing\n", id, dir);
+    toLog(logBuffer);
+
+    sem_wait(&empty); //empty--
+
+    //driving
+    sleep(DRIVING_SEC);
+
+    //if the east dir has cars
+    pthread_mutex_lock(&W2);
+    if (nw == START)
+    {
+        sprintf(logBuffer, "Car %d from %s:\t wait the W2N mutex\n", id, dir);
+        toLog(logBuffer);
+
+        pthread_cond_wait(&W2N, &W2); //wait east car go first
+
+        sprintf(logBuffer, "Car %d from %s:\t get the W2N mutex\n", id, dir);
+        toLog(logBuffer);
+    }
+    pthread_mutex_unlock(&W2);
+
+    //the 2nd cross
+    pthread_mutex_lock(&d);
+    sprintf(logBuffer, "Car %d from %s:\t lock the d mutex\n", id, dir);
+    toLog(logBuffer);
+
+    //driving
+    sleep(DRIVING_SEC);
+
+    //release source
+    sem_post(&empty);
+    pthread_mutex_unlock(&c);
+    pthread_mutex_unlock(&d);
+    pthread_mutex_unlock(&waitN); //next follow car
+    printf("car %d from %s leaving crossing\n", id, dir);
+    sprintf(logBuffer, "car %d from %s:\t leaving crossing\n", id, dir);
+    toLog(logBuffer);
+
+    //signal north to go
+    pthread_cond_signal(&N2E);
+    sprintf(logBuffer, "Car %d from %s:\t signal the N2E signal 1\n", id, dir);
+    toLog(logBuffer);
+
+    //add next car
+    poll(&N);
+    if (!isEmpty(N))
+    {
+        pthread_create(&N.carThread[N.front], NULL, carFromN, &N.data[N.front]);
+        car[carSize++] = N.carThread[N.front];
+    }
+    else
+    {
+        pthread_mutex_lock(&N2);
+        pthread_cond_signal(&N2E); //last signal
+        nn = IDLE;
+        pthread_mutex_unlock(&N2);
+        sprintf(logBuffer, "Car %d from %s:\t release the N2E signal 2\n", id, dir);
+        toLog(logBuffer);
+    }
+
+    return 0;
+}
+
 void *carFromW(void *arg)
 {
     int id = *(int *)(arg); //the id of the car
@@ -253,13 +392,19 @@ void *carFromW(void *arg)
 
     sem_wait(&empty); //empty--
 
+    //driving
+    sleep(DRIVING_SEC);
+
     //if the east dir has cars
     pthread_mutex_lock(&S2);
     if (ns == START)
     {
+        sprintf(logBuffer, "Car %d from %s:\t wait the S2W mutex\n", id, dir);
+        toLog(logBuffer);
+
         pthread_cond_wait(&S2W, &S2); //wait east car go first
 
-        sprintf(logBuffer, "Car %d from %s:\t wait the S2W mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t get the S2W mutex\n", id, dir);
         toLog(logBuffer);
     }
     pthread_mutex_unlock(&S2);
@@ -283,7 +428,7 @@ void *carFromW(void *arg)
 
     //signal north to go
     pthread_cond_signal(&W2N);
-    sprintf(logBuffer, "Car %d from %s:\t signal the W2N signal\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t signal the W2N signal 1\n", id, dir);
     toLog(logBuffer);
 
     //add next car
@@ -299,7 +444,7 @@ void *carFromW(void *arg)
         pthread_cond_signal(&W2N); //last signal
         nw = IDLE;
         pthread_mutex_unlock(&W2);
-        sprintf(logBuffer, "Car %d from %s:\t release the W2N signal\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t release the W2N signal 2\n", id, dir);
         toLog(logBuffer);
     }
 
@@ -364,32 +509,40 @@ int main(void)
         c = data[i];
         switch (c) //check which dir
         {
-        // case 'n':
-        //     push(N, i);
-        //     nn = START;
-
-        //     pthread_create(&car[N.front], NULL, carFromN, &N.front); //north
-        //     break;
+        case 'n':
+            push(&N, i);
+            if (nn==IDLE)
+            {
+                nn = START;
+                pthread_create(&N.carThread[N.front],NULL,carFromN,&N.data[N.front]);
+                car[carSize++]=N.carThread[N.front];
+            }
+            
+            break;
         case 's':
             push(&S, i);
             if (ns == IDLE)
             {
-                // ns = START;
+                ns = START;
                 pthread_create(&S.carThread[S.front], NULL, carFromS, &S.data[S.front]); //south
                 car[carSize++] = S.carThread[S.front];
                 // poll(&S);
             }
             break;
-        // case 'e':
-        //     push(E, i);
-        //     ne = START;
-        //     pthread_create(&car[E.front], NULL, carFromE, &E.front); //east
-        //     break;
+        case 'e':
+            push(&E, i);
+            if (ne == IDLE)
+            {
+                ne = START;
+                pthread_create(&E.carThread[E.front], NULL, carFromE, &E.data[E.front]); //east
+                car[carSize++] = E.carThread[E.front];
+            }
+            break;
         case 'w':
             push(&W, i);
             if (nw == IDLE)
             {
-                // ns = START;
+                nw = START;
                 pthread_create(&W.carThread[W.front], NULL, carFromW, &W.data[W.front]); //south
                 car[carSize++] = W.carThread[W.front];
             }
@@ -398,11 +551,7 @@ int main(void)
             break;
         }
     }
-    // pthread_t threadId;
-    // int arg = 0;
-    // int r = pthread_create(&threadId, NULL, car2N, NULL);
-    // printf("hello");
-    // system("pause");
+
     sleep(n * DRIVING_SEC);
     for (int i = 0; i < n; i++)
     {
@@ -411,3 +560,7 @@ int main(void)
     fclose(carLog);
     return 0;
 }
+
+//ToDo: NESW queue is not protected
+//ns,nw,nn,ne is not protected
+//logBuffer is not protected

@@ -2,47 +2,159 @@ log starts
 Car 0 from West:	 lock the wait mutex
 Car 0 from West:	 lock the d mutex
 car 0 from West:	 arrives crossing
-Car 1 from North:	 lock the wait mutex
-Car 1 from North:	 lock the c mutex
-car 1 from North:	 arrives crossing
+Car 1 from South:	 lock the wait signal
+Car 1 from South:	 lock the a signal
+car 1 from South:	 arrives crossing
 Car 2 from East:	 lock the wait mutex
 Car 2 from East:	 lock the b mutex
 car 2 from East:	 arrives crossing
-Car 0 from West:	 lock the a mutex
-Car 1 from North:	 wait the W2N mutex
+Car 3 from North:	 lock the wait mutex
+Car 3 from North:	 lock the c mutex
+car 3 from North:	 arrives crossing
+car 3 from South:	 causes a deadlock
+Car 0 from West:	 wait the S2W signal
+Car 1 from South:	 wait the E2S mutex
 Car 2 from East:	 wait the N2E signal
-car 0 from West:	 leaving crossing
-Car 0 from West:	 signal the W2N signal 1
-Car 1 from North:	 get the W2N mutex
-Car 1 from North:	 lock the d mutex
-Car 5 from West:	 lock the wait mutex
-car 1 from North:	 leaving crossing
-Car 5 from West:	 lock the d mutex
-Car 1 from North:	 signal the N2E signal 1
-car 5 from West:	 arrives crossing
+Car 3 from North:	 lock the d mutex
+car 3 from North:	 leaving crossing
+Car 3 from North:	 signal the N2E signal 1
 Car 2 from East:	 get the N2E signal
 Car 2 from East:	 lock the c mutex
 Car 4 from North:	 lock the wait mutex
-Car 5 from West:	 lock the a mutex
 car 2 from East:	 leaving crossing
-Car 2 from East:	 signal the E2S signal 1
 Car 4 from North:	 lock the c mutex
+Car 2 from East:	 signal the E2S signal 1
 car 4 from North:	 arrives crossing
-Car 3 from East:	 lock the wait mutex
-Car 3 from East:	 lock the b mutex
-car 3 from East:	 arrives crossing
-Car 4 from North:	 wait the W2N mutex
-car 5 from West:	 leaving crossing
-Car 5 from West:	 signal the W2N signal 1
-Car 5 from West:	 release the W2N signal 2
-Car 4 from North:	 get the W2N mutex
+Car 1 from South:	 get the E2S mutex
+Car 1 from South:	 lock the b mutex
+Car 5 from East:	 lock the wait mutex
+Car 4 from North:	 wait the W2N signal
+Car 5 from East:	 lock the b mutex
+car 1 from South:	 leaving crossing
+Car 1 from South:	 release the S2W signal 1
+Car 0 from West:	 get the S2W signal
+Car 0 from West:	 lock the a mutex
+car 5 from East:	 arrives crossing
+Car 7 from South:	 lock the wait signal
+Car 5 from East:	 wait the N2E signal
+Car 7 from South:	 lock the a signal
+car 0 from West:	 leaving crossing
+Car 0 from West:	 signal the W2N signal 1
+Car 4 from North:	 get the W2N signal
 Car 4 from North:	 lock the d mutex
-Car 3 from East:	 wait the N2E signal
+car 7 from South:	 arrives crossing
+Car 6 from West:	 lock the wait mutex
+Car 7 from South:	 wait the E2S mutex
+Car 6 from West:	 lock the d mutex
 car 4 from North:	 leaving crossing
+car 6 from West:	 arrives crossing
+Car 5 from East:	 get the N2E signal
+Car 5 from East:	 lock the c mutex
 Car 4 from North:	 signal the N2E signal 1
-Car 3 from East:	 get the N2E signal
-Car 3 from East:	 lock the c mutex
-Car 4 from North:	 release the N2E signal 2
-car 3 from East:	 leaving crossing
-Car 3 from East:	 signal the E2S signal 1
-Car 3 from East:	 release the E2S signal 2
+Car 8 from North:	 lock the wait mutex
+Car 6 from West:	 wait the S2W signal
+Car 8 from North:	 lock the c mutex
+car 5 from East:	 leaving crossing
+Car 5 from East:	 signal the E2S signal 1
+Car 7 from South:	 get the E2S mutex
+Car 7 from South:	 lock the b mutex
+car 8 from North:	 arrives crossing
+Car 9 from East:	 lock the wait mutex
+Car 8 from North:	 wait the W2N signal
+Car 9 from East:	 lock the b mutex
+car 7 from South:	 leaving crossing
+car 9 from East:	 arrives crossing
+Car 6 from West:	 get the S2W signal
+Car 6 from West:	 lock the a mutex
+Car 7 from South:	 release the S2W signal 1
+Car 12 from South:	 lock the wait signal
+Car 9 from East:	 wait the N2E signal
+Car 12 from South:	 lock the a signal
+car 6 from West:	 leaving crossing
+car 12 from South:	 arrives crossing
+Car 8 from North:	 get the W2N signal
+Car 8 from North:	 lock the d mutex
+Car 6 from West:	 signal the W2N signal 1
+Car 10 from West:	 lock the wait mutex
+Car 12 from South:	 wait the E2S mutex
+car 8 from North:	 leaving crossing
+Car 8 from North:	 signal the N2E signal 1
+Car 9 from East:	 get the N2E signal
+Car 9 from East:	 lock the c mutex
+Car 10 from West:	 lock the d mutex
+car 10 from West:	 arrives crossing
+Car 11 from North:	 lock the wait mutex
+Car 10 from West:	 wait the S2W signal
+Car 11 from North:	 lock the c mutex
+car 9 from East:	 leaving crossing
+car 11 from North:	 arrives crossing
+Car 9 from East:	 signal the E2S signal 1
+Car 12 from South:	 get the E2S mutex
+Car 12 from South:	 lock the b mutex
+Car 14 from East:	 lock the wait mutex
+Car 11 from North:	 wait the W2N signal
+Car 14 from East:	 lock the b mutex
+car 12 from South:	 leaving crossing
+Car 12 from South:	 release the S2W signal 1
+Car 10 from West:	 get the S2W signal
+Car 10 from West:	 lock the a mutex
+car 14 from East:	 arrives crossing
+Car 16 from South:	 lock the wait signal
+Car 14 from East:	 wait the N2E signal
+Car 16 from South:	 lock the a signal
+car 10 from West:	 leaving crossing
+car 16 from South:	 arrives crossing
+Car 11 from North:	 get the W2N signal
+Car 11 from North:	 lock the d mutex
+Car 10 from West:	 signal the W2N signal 1
+Car 13 from West:	 lock the wait mutex
+Car 16 from South:	 wait the E2S mutex
+Car 13 from West:	 lock the d mutex
+car 11 from North:	 leaving crossing
+car 13 from West:	 arrives crossing
+Car 14 from East:	 get the N2E signal
+Car 11 from North:	 signal the N2E signal 1
+Car 14 from East:	 lock the c mutex
+Car 15 from North:	 lock the wait mutex
+Car 13 from West:	 wait the S2W signal
+Car 15 from North:	 lock the c mutex
+car 15 from North:	 arrives crossing
+car 14 from East:	 leaving crossing
+Car 14 from East:	 signal the E2S signal 1
+Car 16 from South:	 get the E2S mutex
+Car 16 from South:	 lock the b mutex
+Car 14 from East:	 release the E2S signal 2
+Car 15 from North:	 wait the W2N signal
+car 16 from South:	 leaving crossing
+Car 16 from South:	 release the S2W signal 1
+Car 13 from West:	 get the S2W signal
+Car 13 from West:	 lock the a mutex
+Car 16 from South:	 release the S2W signal 2
+car 13 from West:	 leaving crossing
+Car 13 from West:	 signal the W2N signal 1
+Car 15 from North:	 get the W2N signal
+Car 15 from North:	 lock the d mutex
+Car 18 from West:	 lock the wait mutex
+car 15 from North:	 leaving crossing
+Car 15 from North:	 signal the N2E signal 1
+Car 18 from West:	 lock the d mutex
+car 18 from West:	 arrives crossing
+Car 17 from North:	 lock the wait mutex
+Car 17 from North:	 lock the c mutex
+car 17 from North:	 arrives crossing
+Car 18 from West:	 lock the a mutex
+Car 17 from North:	 wait the W2N signal
+car 18 from West:	 leaving crossing
+Car 18 from West:	 signal the W2N signal 1
+Car 17 from North:	 get the W2N signal
+Car 17 from North:	 lock the d mutex
+Car 18 from West:	 release the W2N signal 2
+car 17 from North:	 leaving crossing
+Car 17 from North:	 signal the N2E signal 1
+Car 19 from North:	 lock the wait mutex
+Car 19 from North:	 lock the c mutex
+car 19 from North:	 arrives crossing
+Car 19 from North:	 lock the d mutex
+car 19 from North:	 leaving crossing
+Car 19 from North:	 signal the N2E signal 1
+Car 19 from North:	 release the N2E signal 2

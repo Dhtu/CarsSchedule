@@ -2,19 +2,20 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
-#define DEBUG
+#define DEADLOCK_DETECT //the deadlock config
+#define DEBUG           //debug config
+#define DRIVING_SEC 1   //the driving time
 
-// #define START 1
-// #define IDLE 0
 //the stage of each dir
 typedef enum
 {
     IDLE,
     START
 } dirStage;
-dirStage nn = IDLE, ns = IDLE, ne = IDLE, nw = IDLE;
+
 // const int QMaxSize = 10; //max size of queue
 #define QMaxSize 10
+
 //queue struct
 typedef struct
 {
@@ -23,22 +24,26 @@ typedef struct
     int front; //front
     int rear;  //back
 } Q;
+
 //initial Q
 int initQ(Q *q)
 {
     q->front = 0;
     q->rear = 0;
 }
+
 //check full
 int isFull(Q q)
 {
     return q.front == q.rear + 1;
 }
+
 //check empty
 int isEmpty(Q q)
 {
     return q.front == q.rear;
 }
+
 //push element
 int push(Q *q, int e)
 {
@@ -51,6 +56,7 @@ int push(Q *q, int e)
     }
     return 0;
 }
+
 //poll element
 int poll(Q *q)
 {
@@ -62,6 +68,7 @@ int poll(Q *q)
     }
     return -1;
 }
+
 //peek element
 int peek(Q q)
 {
@@ -89,24 +96,29 @@ pthread_mutex_t waitN, waitS, waitE, waitW; //the waiting line of the road
 pthread_mutex_t N2, E2, S2, W2;             //the mutex of conditon var
 pthread_cond_t N2E, E2S, S2W, W2N;          //the condition mutex to wait right
 // int sN, sS, sW, sE;                         //signal of each dir
-sem_t empty;       //the deadlock signal
+dirStage nn = IDLE, ns = IDLE, ne = IDLE, nw = IDLE; //the stage of each dir
+
+int empty;                //the deadlock signal
+pthread_mutex_t emptyMtx; //the mutex to protect empty
+
 pthread_t car[20]; //the thread id of cars
-int carSize = 0;
+
+int carSize = 0; //the car counter
 
 //cars from each dir
-#define DRIVING_SEC 1
 void *carFromS(void *arg)
 {
     int id = *(int *)(arg); //the id of the car
     char dir[20] = "South"; //the direction of the car
     char logBuffer[100];
+    int ddlk = 0;
     pthread_mutex_lock(&waitS); //lock follow car//is it necessary
-    sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t lock the wait signal\n", id, dir);
     toLog(logBuffer);
 
     ns = START; //not nessary to lock S2
     pthread_mutex_lock(&a);
-    sprintf(logBuffer, "Car %d from %s:\t lock the a mutex\n", id, dir);
+    sprintf(logBuffer, "Car %d from %s:\t lock the a signal\n", id, dir);
     toLog(logBuffer);
 
     //print console info
@@ -114,14 +126,28 @@ void *carFromS(void *arg)
     sprintf(logBuffer, "car %d from South:\t arrives crossing\n", id);
     toLog(logBuffer);
 
-    sem_wait(&empty); //empty--
+#ifdef DEADLOCK_DETECT
+    pthread_mutex_lock(&emptyMtx);
+    empty--; //when empty==0, a deadlock happened
+
+    if (empty == 0)
+    {
+        printf("DEADLOCK: car jam detected\n");
+        printf("%s to go\n",dir);
+        sprintf(logBuffer, "car %d from South:\t causes a deadlock\n", id);
+        toLog(logBuffer);
+        ddlk = 1; //ignore the right first rule
+    }
+    pthread_mutex_unlock(&emptyMtx);
+
+#endif
 
     //driving
     sleep(DRIVING_SEC);
 
     //if the east dir has cars
     pthread_mutex_lock(&E2);
-    if (ne == START)
+    if (ne == START && !ddlk)
     {
         sprintf(logBuffer, "Car %d from %s:\t wait the E2S mutex\n", id, dir);
         toLog(logBuffer);
@@ -134,7 +160,8 @@ void *carFromS(void *arg)
     pthread_mutex_unlock(&E2);
 
     //the 2nd cross
-    pthread_mutex_lock(&b);
+    if (!ddlk)
+        pthread_mutex_lock(&b);
     sprintf(logBuffer, "Car %d from %s:\t lock the b mutex\n", id, dir);
     toLog(logBuffer);
 
@@ -142,7 +169,7 @@ void *carFromS(void *arg)
     sleep(DRIVING_SEC);
 
     //release source
-    sem_post(&empty);
+    // sem_post(&empty);
     pthread_mutex_unlock(&a);
     pthread_mutex_unlock(&b);
     pthread_mutex_unlock(&waitS); //next follow car
@@ -174,49 +201,13 @@ void *carFromS(void *arg)
 
     return 0;
 }
-// void *carFromN(void *arg)
-// {
-//     int id = *(int *)(arg);
-//     int sem;
-//     pthread_mutex_lock(&waitN); //lock follow car
-//     sN = 1;
-//     pthread_mutex_lock(&c);
-//     sem_wait(&empty);
-//     if (sW)
-//     {
-//         sem_getvalue(&empty, &sem);
-//         if (sem == 0)
-//         {
-//             printf("DEADLOCK: car jam detexted, signalling North to go\n");
-//             sem_post(&empty);
-//             pthread_mutex_unlock(&c);
-//             sN = 0;
-//             pthread_mutex_unlock(&waitN);
-//             return 0;
-//         }
 
-//         pthread_cond_wait(&W2N, &waitN); //wait west car go first
-//     }
-
-//     printf("car %d from North arrives crossing\n", id);
-//     pthread_mutex_lock(&d);
-//     sleep(1); //to cause deadlock
-//     pthread_mutex_unlock(&d);
-//     sem_post(&empty);
-//     pthread_mutex_unlock(&c);
-
-//     printf("car %d from North leaving crossing\n", id);
-//     pthread_cond_signal(&N2E);
-//     sN = 0;
-//     pthread_mutex_unlock(&waitN); //next follow car
-//     // printf("hello");
-//     return 0;
-// }
 void *carFromE(void *arg)
 {
     int id = *(int *)(arg); //the id of the car
     char dir[20] = "East";  //the direction of the car
     char logBuffer[100];
+    int ddlk = 0;
     pthread_mutex_lock(&waitE); //lock follow car
     sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
     toLog(logBuffer);
@@ -231,14 +222,28 @@ void *carFromE(void *arg)
     sprintf(logBuffer, "car %d from %s:\t arrives crossing\n", id, dir);
     toLog(logBuffer);
 
-    sem_wait(&empty); //empty--
+#ifdef DEADLOCK_DETECT
+    pthread_mutex_lock(&emptyMtx);
+    empty--; //when empty==0, a deadlock happened
+
+    if (empty == 0)
+    {
+        printf("DEADLOCK: car jam detected\n");
+        printf("%s to go\n",dir);
+        sprintf(logBuffer, "car %d from South:\t causes a deadlock\n", id);
+        toLog(logBuffer);
+        ddlk = 1; //ignore the right first rule
+    }
+    pthread_mutex_unlock(&emptyMtx);
+
+#endif
 
     //driving
     sleep(DRIVING_SEC);
 
     //if the east dir has cars
     pthread_mutex_lock(&N2);
-    if (nn == START) //dir refer!!!!!
+    if (nn == START && !ddlk) //dir refer!!!!!
     {
         sprintf(logBuffer, "Car %d from %s:\t wait the N2E signal\n", id, dir);
         toLog(logBuffer);
@@ -251,7 +256,8 @@ void *carFromE(void *arg)
     pthread_mutex_unlock(&N2);
 
     //the 2nd cross
-    pthread_mutex_lock(&c);
+    if (!ddlk)
+        pthread_mutex_lock(&c);
     sprintf(logBuffer, "Car %d from %s:\t lock the c mutex\n", id, dir);
     toLog(logBuffer);
 
@@ -259,7 +265,7 @@ void *carFromE(void *arg)
     sleep(DRIVING_SEC);
 
     //release source
-    sem_post(&empty);
+    // sem_post(&empty);
     pthread_mutex_unlock(&b);
     pthread_mutex_unlock(&c);
     pthread_mutex_unlock(&waitE); //next follow car
@@ -294,8 +300,9 @@ void *carFromE(void *arg)
 void *carFromN(void *arg)
 {
     int id = *(int *)(arg); //the id of the car
-    char dir[20] = "North";  //the direction of the car
+    char dir[20] = "North"; //the direction of the car
     char logBuffer[100];
+    int ddlk = 0;
     pthread_mutex_lock(&waitN); //lock follow car
     sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
     toLog(logBuffer);
@@ -310,27 +317,42 @@ void *carFromN(void *arg)
     sprintf(logBuffer, "car %d from %s:\t arrives crossing\n", id, dir);
     toLog(logBuffer);
 
-    sem_wait(&empty); //empty--
+#ifdef DEADLOCK_DETECT
+    pthread_mutex_lock(&emptyMtx);
+    empty--; //when empty==0, a deadlock happened
+
+    if (empty == 0)
+    {
+        printf("DEADLOCK: car jam detected\n");
+        printf("%s to go\n",dir);
+        sprintf(logBuffer, "car %d from South:\t causes a deadlock\n", id);
+        toLog(logBuffer);
+        ddlk = 1; //ignore the right first rule
+    }
+    pthread_mutex_unlock(&emptyMtx);
+
+#endif
 
     //driving
     sleep(DRIVING_SEC);
 
     //if the east dir has cars
     pthread_mutex_lock(&W2);
-    if (nw == START)
+    if (nw == START && !ddlk)
     {
-        sprintf(logBuffer, "Car %d from %s:\t wait the W2N mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t wait the W2N signal\n", id, dir);
         toLog(logBuffer);
 
         pthread_cond_wait(&W2N, &W2); //wait east car go first
 
-        sprintf(logBuffer, "Car %d from %s:\t get the W2N mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t get the W2N signal\n", id, dir);
         toLog(logBuffer);
     }
     pthread_mutex_unlock(&W2);
 
     //the 2nd cross
-    pthread_mutex_lock(&d);
+    if (!ddlk)
+        pthread_mutex_lock(&d);
     sprintf(logBuffer, "Car %d from %s:\t lock the d mutex\n", id, dir);
     toLog(logBuffer);
 
@@ -338,7 +360,7 @@ void *carFromN(void *arg)
     sleep(DRIVING_SEC);
 
     //release source
-    sem_post(&empty);
+    // sem_post(&empty);
     pthread_mutex_unlock(&c);
     pthread_mutex_unlock(&d);
     pthread_mutex_unlock(&waitN); //next follow car
@@ -376,6 +398,7 @@ void *carFromW(void *arg)
     int id = *(int *)(arg); //the id of the car
     char dir[20] = "West";  //the direction of the car
     char logBuffer[100];
+    int ddlk = 0;
     pthread_mutex_lock(&waitW); //lock follow car
     sprintf(logBuffer, "Car %d from %s:\t lock the wait mutex\n", id, dir);
     toLog(logBuffer);
@@ -390,27 +413,42 @@ void *carFromW(void *arg)
     sprintf(logBuffer, "car %d from %s:\t arrives crossing\n", id, dir);
     toLog(logBuffer);
 
-    sem_wait(&empty); //empty--
+#ifdef DEADLOCK_DETECT
+    pthread_mutex_lock(&emptyMtx);
+    empty--; //when empty==0, a deadlock happened
+
+    if (empty == 0)
+    {
+        printf("DEADLOCK: car jam detected\n");
+        printf("%s to go\n",dir);
+        sprintf(logBuffer, "car %d from South:\t causes a deadlock\n", id);
+        toLog(logBuffer);
+        ddlk = 1; //ignore the right first rule
+    }
+    pthread_mutex_unlock(&emptyMtx);
+
+#endif
 
     //driving
     sleep(DRIVING_SEC);
 
     //if the east dir has cars
     pthread_mutex_lock(&S2);
-    if (ns == START)
+    if (ns == START && !ddlk)
     {
-        sprintf(logBuffer, "Car %d from %s:\t wait the S2W mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t wait the S2W signal\n", id, dir);
         toLog(logBuffer);
 
         pthread_cond_wait(&S2W, &S2); //wait east car go first
 
-        sprintf(logBuffer, "Car %d from %s:\t get the S2W mutex\n", id, dir);
+        sprintf(logBuffer, "Car %d from %s:\t get the S2W signal\n", id, dir);
         toLog(logBuffer);
     }
     pthread_mutex_unlock(&S2);
 
     //the 2nd cross
-    pthread_mutex_lock(&a);
+    if (!ddlk)
+        pthread_mutex_lock(&a);
     sprintf(logBuffer, "Car %d from %s:\t lock the a mutex\n", id, dir);
     toLog(logBuffer);
 
@@ -418,7 +456,7 @@ void *carFromW(void *arg)
     sleep(DRIVING_SEC);
 
     //release source
-    sem_post(&empty);
+    // sem_post(&empty);
     pthread_mutex_unlock(&d);
     pthread_mutex_unlock(&a);
     pthread_mutex_unlock(&waitW); //next follow car
@@ -472,18 +510,14 @@ int main(void)
     pthread_cond_init(&S2W, NULL);
     pthread_cond_init(&W2N, NULL);
 
-    //init signal
-    // sS = 0;
-    // sN = 0;
-    // sW = 0;
-    // sE = 0;
     nw = IDLE;
     ne = IDLE;
     ns = IDLE;
     nn = IDLE;
 
     //semaphore init
-    sem_init(&empty, 0, 4);
+    // sem_init(&empty, 0, 4);
+    empty = 4;
 
     //init log file
     carLog = fopen("./log", "w+");
@@ -491,11 +525,9 @@ int main(void)
     {
         printf("log file error\n");
     }
-    fprintf(carLog, "log starts\n");
-    fflush(carLog); //flush buffer
-    // start input data
-    char data[20];
+    toLog("log starts\n");
 
+    // start input data
     freopen("in", "r", stdin);
     int n;
     scanf("%d", &n);
@@ -505,19 +537,18 @@ int main(void)
 
     for (i = 0; i < n; i++)
     {
-        scanf("%c", &(data[i]));
-        c = data[i];
+        scanf("%c", &c);
         switch (c) //check which dir
         {
         case 'n':
             push(&N, i);
-            if (nn==IDLE)
+            if (nn == IDLE)
             {
                 nn = START;
-                pthread_create(&N.carThread[N.front],NULL,carFromN,&N.data[N.front]);
-                car[carSize++]=N.carThread[N.front];
+                pthread_create(&N.carThread[N.front], NULL, carFromN, &N.data[N.front]);
+                car[carSize++] = N.carThread[N.front];
             }
-            
+
             break;
         case 's':
             push(&S, i);
@@ -557,6 +588,7 @@ int main(void)
     {
         pthread_join(car[i], NULL);
     }
+
     fclose(carLog);
     return 0;
 }
